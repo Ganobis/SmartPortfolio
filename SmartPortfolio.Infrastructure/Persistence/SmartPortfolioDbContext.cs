@@ -16,6 +16,7 @@ namespace SmartPortfolio.Infrastructure.Persistence
         }
 
         public DbSet<Portfolio> Portfolios { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,6 +35,10 @@ namespace SmartPortfolio.Infrastructure.Persistence
                         .HasMaxLength(3)
                         .IsRequired();
                 });
+
+                entity.HasMany(e => e.Transactions)
+                      .WithOne()
+                      .HasForeignKey(e => e.PortfolioId);
             });
             base.OnModelCreating(modelBuilder);
         }

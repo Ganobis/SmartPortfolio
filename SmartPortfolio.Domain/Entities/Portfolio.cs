@@ -8,10 +8,16 @@ namespace SmartPortfolio.Domain.Entities;
 
 public class Portfolio
 {
+    #region privarte fields
+        
+    private readonly List<Transaction> _transactions = new();
+
+    #endregion
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public Guid OwnerId { get; private set; }
     public Money Balance { get; private set; } = null!;
+    public IReadOnlyCollection<Transaction> Transactions => _transactions.AsReadOnly();
 
     public Portfolio()
     {
@@ -39,6 +45,7 @@ public class Portfolio
         }
 
         Balance += amount;
+        _transactions.Add(new Transaction(Id, amount.Amount, amount.Currency, DateTime.UtcNow));
     }
     public void Withdraw(Money amount)
     {
@@ -53,5 +60,6 @@ public class Portfolio
         }
 
         Balance -= amount;
+        _transactions.Add(new Transaction(Id, -amount.Amount, amount.Currency, DateTime.UtcNow));
     }
 }
