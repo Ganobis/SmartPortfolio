@@ -23,6 +23,8 @@ namespace SmartPortfolio.Infrastructure.Persistence
             modelBuilder.Entity<Portfolio>(entity =>
             {
                 entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
                 entity.OwnsOne(e => e.Balance, money =>
                 {
@@ -39,6 +41,14 @@ namespace SmartPortfolio.Infrastructure.Persistence
                 entity.HasMany(e => e.Transactions)
                       .WithOne()
                       .HasForeignKey(e => e.PortfolioId);
+            });
+            modelBuilder.Entity<Transaction>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Amount).HasPrecision(18, 4);
+
+                entity.Property(e => e.Currency).HasMaxLength(3).IsRequired();
             });
             base.OnModelCreating(modelBuilder);
         }

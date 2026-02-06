@@ -11,7 +11,10 @@ public record Money
     public decimal Amount { get; init; }
     public string Currency { get; init; }
 
-    private static readonly HashSet<string> AllowedCurrencies = ["PLN", "USD", "EUR", "GBP", "CHF"];
+    public static readonly HashSet<string> AllowedCurrencies = ["PLN", "USD", "EUR", "GBP", "CHF"];
+
+    //For EF
+    private Money() { }
 
     public Money(decimal amount, string currency)
     {

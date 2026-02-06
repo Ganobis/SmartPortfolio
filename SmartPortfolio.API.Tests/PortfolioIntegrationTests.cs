@@ -28,7 +28,7 @@ public class PortfolioIntegrationTests : IClassFixture<WebApplicationFactory<Pro
         createdPortfolio!.Id.Should().NotBeEmpty();
         createdPortfolio.BalanceAmount.Should().Be(0);
 
-        var depositDto = new TransactionDto(100, "PLN");
+        var depositDto = new CreateTransactionDto(100, "PLN");
         var portfolioId = createdPortfolio.Id;
 
         var depositResponse = await _client.PostAsJsonAsync($"/api/portfolios/{portfolioId}/deposit", depositDto);

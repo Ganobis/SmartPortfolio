@@ -48,79 +48,60 @@ public class PortfoliosController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(CreatePortfolioDto dto)
     {
-        try
-        {
-            var ownerId = Guid.NewGuid();
-            var portfolio = new Portfolio(dto.Name, ownerId, dto.Currency);
+        var ownerId = Guid.NewGuid();
+        var portfolio = new Portfolio(dto.Name, ownerId, dto.Currency);
 
-            _dbContext.Portfolios.Add(portfolio);
+        _dbContext.Portfolios.Add(portfolio);
 
-            await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
-            var responseDto = new PortfolioDto
-            (
-                portfolio.Id,
-                portfolio.Name,
-                portfolio.Balance.Amount,
-                portfolio.Balance.Currency,
-                new List<TransactionDto>()
-            );
+        var responseDto = new PortfolioDto
+        (
+            portfolio.Id,
+            portfolio.Name,
+            portfolio.Balance.Amount,
+            portfolio.Balance.Currency,
+            new List<TransactionDto>()
+        );
 
 
-            return CreatedAtAction(nameof(Get), new { id = portfolio.Id }, responseDto);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        return CreatedAtAction(nameof(Get), new { id = portfolio.Id }, responseDto);
     }
 
     [HttpPost("{id}/deposit")]
-    public async Task<IActionResult> Deposit(Guid id, TransactionDto dto)
+    public async Task<IActionResult> Deposit(Guid id, CreateTransactionDto dto)
     {
-        var portfolio = await _dbContext.Portfolios.FindAsync(id);
+        var portfolio = await _dbContext.Portfolios
+            .Include(p => p.Transactions)
+            .FirstOrDefaultAsync(p => p.Id == id);
         if (portfolio is null)
         {
             return NotFound();
         }
-        try
-        {
-            var money = new Money(dto.Amount, dto.Currency);
-            portfolio.Deposit(money);
 
-            await _dbContext.SaveChangesAsync();
-            return NoContent();
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var money = new Money(dto.Amount, dto.Currency);
+        portfolio.Deposit(money);
+
+        await _dbContext.SaveChangesAsync();
+        return NoContent();
+
     }
 
     [HttpPost("{id}/withdraw")]
-    public async Task<IActionResult> Withdraw(Guid id, TransactionDto dto)
+    public async Task<IActionResult> Withdraw(Guid id, CreateTransactionDto dto)
     {
-        var portfolio = await _dbContext.Portfolios.FindAsync(id);
+        var portfolio = await _dbContext.Portfolios
+            .Include(p => p.Transactions)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
         if (portfolio is null)
         {
             return NotFound();
         }
-        try
-        {
-            var money = new Money(dto.Amount, dto.Currency);
-            portfolio.Withdraw(money);
+        var money = new Money(dto.Amount, dto.Currency);
+        portfolio.Withdraw(money);
 
-            await _dbContext.SaveChangesAsync();
-            return NoContent();
-
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = ex.Message }); ;
-        }
+        await _dbContext.SaveChangesAsync();
+        return NoContent();
     }
 }
