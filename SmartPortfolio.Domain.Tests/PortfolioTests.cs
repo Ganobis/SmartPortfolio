@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
 using SmartPortfolio.Domain.Entities;
+using SmartPortfolio.Domain.ValueObjects;
 
 namespace SmartPortfolio.Domain.Tests;
 

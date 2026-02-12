@@ -1,5 +1,5 @@
 ﻿using FluentAssertions;
-using SmartPortfolio.Domain.Entities;
+using SmartPortfolio.Domain.ValueObjects;
 
 namespace SmartPortfolio.Domain.Tests;
 

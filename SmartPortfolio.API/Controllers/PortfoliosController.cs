@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using SmartPortfolio.API.Dtos;
 using SmartPortfolio.Domain.Entities;
 using SmartPortfolio.Infrastructure.Persistence;
+using SmartPortfolio.Domain.ValueObjects;
+using SmartPortfolio.Domain.Interfaces;
 
 namespace SmartPortfolio.API.Controllers;
 
@@ -12,9 +14,12 @@ namespace SmartPortfolio.API.Controllers;
 public class PortfoliosController : ControllerBase
 {
     private readonly SmartPortfolioDbContext _dbContext;
-    public PortfoliosController(SmartPortfolioDbContext dbContext)
+    private readonly ICurrencyConverter _currencyConverter;
+
+    public PortfoliosController(SmartPortfolioDbContext dbContext, ICurrencyConverter currencyConverter)
     {
         _dbContext = dbContext;
+        _currencyConverter = currencyConverter;
     }
 
     [HttpGet("{id}")]
@@ -43,6 +48,30 @@ public class PortfoliosController : ControllerBase
         );
 
         return Ok(dto);
+    }
+
+
+    [HttpGet("{id}/value")]
+    public async Task<ActionResult<PortfolioDto>> GetValue(Guid id, [FromQuery] string currency = "PLN")
+    {
+        var portfolio = await _dbContext.Portfolios
+            .Include(p => p.Transactions)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (portfolio is null)
+        {
+            return NotFound();
+        }
+
+        decimal convertedAmount = await _currencyConverter.Convert(portfolio.Balance.Amount, portfolio.Balance.Currency, currency);
+
+        return Ok(new PortfolioValueDto(
+            portfolio.Id,
+            portfolio.Balance.Amount,
+            portfolio.Balance.Currency,
+            convertedAmount,
+            currency.ToUpper()
+        ));
     }
 
     [HttpPost]

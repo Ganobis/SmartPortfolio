@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SmartPortfolio.Domain.Entities;
+namespace SmartPortfolio.Domain.ValueObjects;
 
 public record Money
 {
     public decimal Amount { get; init; }
-    public string Currency { get; init; }
+    public string Currency { get; init; } = string.Empty;
 
     public static readonly HashSet<string> AllowedCurrencies = ["PLN", "USD", "EUR", "GBP", "CHF"];
 

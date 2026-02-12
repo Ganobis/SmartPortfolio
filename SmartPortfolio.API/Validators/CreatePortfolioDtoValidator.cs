@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 using SmartPortfolio.API.Dtos;
-using SmartPortfolio.Domain.Entities;
+using SmartPortfolio.Domain.ValueObjects;
 
 public class CreatePortfolioDtoValidator : AbstractValidator<CreatePortfolioDto>
 {

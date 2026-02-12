@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
 using SmartPortfolio.API.Infrastructure;
+using SmartPortfolio.Domain.Interfaces;
 using SmartPortfolio.Infrastructure.Persistence;
+using SmartPortfolio.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +28,11 @@ builder.Services.AddDbContext<SmartPortfolioDbContext>(options =>
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(10),
             errorNumbersToAdd: null);
-    }));
+    })); 
+
+builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<ICurrencyConverter, NbpCurrencyConverter>();
 builder.Services.AddControllers(); 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

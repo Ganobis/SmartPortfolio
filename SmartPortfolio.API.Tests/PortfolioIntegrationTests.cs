@@ -1,17 +1,19 @@
-﻿using System.Net.Http.Json;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using SmartPortfolio.API.Dtos;
 using SmartPortfolio.API;
+using SmartPortfolio.API.Dtos;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Xunit;
 
 namespace SmartPortfolio.API.Tests;
 
-public class PortfolioIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+public class PortfolioIntegrationTests : IClassFixture<IntegrationTestWebAppFactory>
 {
     private readonly HttpClient _client;
 
-    public PortfolioIntegrationTests(WebApplicationFactory<Program> factory)
+    public PortfolioIntegrationTests(IntegrationTestWebAppFactory factory)
     {
         _client = factory.CreateClient();
     }
@@ -41,5 +43,56 @@ public class PortfolioIntegrationTests : IClassFixture<WebApplicationFactory<Pro
 
         updatedPortfolio.Should().NotBeNull();
         updatedPortfolio!.BalanceAmount.Should().Be(100);
+    }
+
+    [Fact]
+    public async Task Should_Return_Correct_Portfolio_Value_In_PLN()
+    {
+        var createDto = new { Name = "Test Wallet USD", Currency = "USD" };
+        var createResponse = await _client.PostAsJsonAsync("/api/portfolios", createDto);
+        createResponse.EnsureSuccessStatusCode();
+
+        var portfolio = await createResponse.Content.ReadFromJsonAsync<PortfolioDto>();
+        var portfolioId = portfolio!.Id;
+
+        var depositDto = new { Amount = 100m, Currency = "USD" };
+        await _client.PostAsJsonAsync($"/api/portfolios/{portfolioId}/deposit", depositDto);
+
+        var response = await _client.GetAsync($"/api/portfolios/{portfolioId}/value?currency=PLN");
+
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+
+        json.GetProperty("convertedAmount").GetDecimal().Should().Be(400.00m);
+
+        json.GetProperty("targetCurrency").GetString().Should().Be("PLN");
+    }
+
+    [Fact]
+    public async Task Should_Calculate_Value_In_EUR_Using_Cross_Rates()
+    {
+        var createResponse = await _client.PostAsJsonAsync("/api/portfolios", new CreatePortfolioDto("Europe Trip", "USD"));
+        var portfolio = await createResponse.Content.ReadFromJsonAsync<PortfolioDto>();
+
+        await _client.PostAsJsonAsync($"/api/portfolios/{portfolio!.Id}/deposit", new CreateTransactionDto(100, "USD"));
+
+        var response = await _client.GetAsync($"/api/portfolios/{portfolio.Id}/value?currency=EUR");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        json.GetProperty("convertedAmount").GetDecimal().Should().Be(93.02m);
+        json.GetProperty("targetCurrency").GetString().Should().Be("EUR");
+    }
+
+    [Fact]
+    public async Task Should_Return_NotFound_For_NonExistent_Portfolio()
+    {
+        var randomId = Guid.NewGuid();
+
+        var response = await _client.GetAsync($"/api/portfolios/{randomId}/value?currency=PLN");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }
