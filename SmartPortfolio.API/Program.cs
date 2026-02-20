@@ -1,14 +1,17 @@
-using Microsoft.AspNetCore.Connections;
-using Microsoft.EntityFrameworkCore;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Identity;
 using Scalar.AspNetCore;
 using Serilog;
+using SmartPortfolio.API.Extensions;
 using SmartPortfolio.API.Infrastructure;
+using SmartPortfolio.Domain.Entities;
 using SmartPortfolio.Domain.Interfaces;
-using SmartPortfolio.Infrastructure.Persistence;
 using SmartPortfolio.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- 1. Login configuration
 builder.Host.UseSerilog((context, configuration) =>
     configuration
         .MinimumLevel.Information()
@@ -17,32 +20,31 @@ builder.Host.UseSerilog((context, configuration) =>
         .Enrich.FromLogContext()
         .WriteTo.Console());
 
-builder.Services.AddOpenApi();
+// --- 2. Services Registers
+builder.Services.AddCustomOpenApi();
+builder.Services.AddCustomDbContext(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-builder.Services.AddDbContext<SmartPortfolioDbContext>(options =>
-    options.UseSqlServer(connectionString, sqlOptions =>
-    {
-        sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(10),
-            errorNumbersToAdd: null);
-    })); 
-
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ICurrencyConverter, NbpCurrencyConverter>();
-builder.Services.AddControllers(); 
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+// WEB Infrastructure
+builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
 
+// --- 3. HTML pipeline configuration
+app.ApplyMigrations();
+
 app.UseSerilogRequestLogging();
 app.UseExceptionHandler();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -50,6 +52,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

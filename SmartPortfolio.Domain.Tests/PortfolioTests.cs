@@ -97,11 +97,4 @@ public class PortfolioTests
         Action act = () => new Portfolio("", Guid.NewGuid(), "PLN");
         act.Should().Throw<ArgumentException>().WithMessage("*name cannot be empty*");
     }
-
-    [Fact]
-    public void Should_Create_Portfolio_With_Empty_Constructor()
-    {
-        var portfolio = new Portfolio();
-        portfolio.Id.Should().Be(Guid.Empty);
-    }
 }

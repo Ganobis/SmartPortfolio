@@ -37,6 +37,8 @@ namespace SmartPortfolio.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("OwnerId");
+
                     b.ToTable("Portfolios");
                 });
 
@@ -67,9 +69,43 @@ namespace SmartPortfolio.Infrastructure.Migrations
                     b.ToTable("Transactions");
                 });
 
+            modelBuilder.Entity("SmartPortfolio.Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("SmartPortfolio.Domain.Entities.Portfolio", b =>
                 {
-                    b.OwnsOne("SmartPortfolio.Domain.Entities.Money", "Balance", b1 =>
+                    b.HasOne("SmartPortfolio.Domain.Entities.User", "Owner")
+                        .WithMany("Portfolios")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("SmartPortfolio.Domain.ValueObjects.Money", "Balance", b1 =>
                         {
                             b1.Property<Guid>("PortfolioId")
                                 .HasColumnType("uniqueidentifier");
@@ -95,6 +131,8 @@ namespace SmartPortfolio.Infrastructure.Migrations
 
                     b.Navigation("Balance")
                         .IsRequired();
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("SmartPortfolio.Domain.Entities.Transaction", b =>
@@ -109,6 +147,11 @@ namespace SmartPortfolio.Infrastructure.Migrations
             modelBuilder.Entity("SmartPortfolio.Domain.Entities.Portfolio", b =>
                 {
                     b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("SmartPortfolio.Domain.Entities.User", b =>
+                {
+                    b.Navigation("Portfolios");
                 });
 #pragma warning restore 612, 618
         }

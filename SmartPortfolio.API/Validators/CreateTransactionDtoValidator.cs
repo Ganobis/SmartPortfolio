@@ -4,7 +4,7 @@ using SmartPortfolio.Domain.ValueObjects;
 
 namespace SmartPortfolio.API.Validators;
 
-public class CreateTransactionDtoValidator : AbstractValidator<TransactionDto>
+public class CreateTransactionDtoValidator : AbstractValidator<CreateTransactionDto>
 {
     public CreateTransactionDtoValidator()
     {

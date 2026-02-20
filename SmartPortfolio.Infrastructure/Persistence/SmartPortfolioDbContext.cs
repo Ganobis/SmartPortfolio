@@ -17,9 +17,18 @@ namespace SmartPortfolio.Infrastructure.Persistence
 
         public DbSet<Portfolio> Portfolios { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<User>(user =>
+            {
+                user.HasKey(u => u.Id);
+                user.HasIndex(u => u.Email).IsUnique();
+                user.Property(u => u.Name).IsRequired().HasMaxLength(100);
+                user.Property(u => u.Email).IsRequired().HasMaxLength(255);
+            });
+
             modelBuilder.Entity<Portfolio>(entity =>
             {
                 entity.HasKey(e => e.Id);

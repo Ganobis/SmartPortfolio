@@ -1,15 +1,15 @@
 ﻿using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using SmartPortfolio.API;
 using SmartPortfolio.API.Dtos;
+using SmartPortfolio.API.Tests.IntegrationTests.Helpers;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit;
 
-namespace SmartPortfolio.API.Tests;
+namespace SmartPortfolio.API.Tests.IntegrationTests;
 
-public class PortfolioIntegrationTests : IClassFixture<IntegrationTestWebAppFactory>
+public class PortfolioIntegrationTests : IClassFixture<IntegrationTestWebAppFactory>, IAsyncLifetime
 {
     private readonly HttpClient _client;
 
@@ -17,6 +17,13 @@ public class PortfolioIntegrationTests : IClassFixture<IntegrationTestWebAppFact
     {
         _client = factory.CreateClient();
     }
+
+    public async Task InitializeAsync()
+    {
+        await _client.AuthenticateAsync();
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task Should_Create_Portfolio_And_Deposit_Funds()
@@ -34,7 +41,7 @@ public class PortfolioIntegrationTests : IClassFixture<IntegrationTestWebAppFact
         var portfolioId = createdPortfolio.Id;
 
         var depositResponse = await _client.PostAsJsonAsync($"/api/portfolios/{portfolioId}/deposit", depositDto);
-        depositResponse.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
+        depositResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var getResponse = await _client.GetAsync($"/api/portfolios/{portfolioId}");
         getResponse.EnsureSuccessStatusCode();
@@ -62,7 +69,7 @@ public class PortfolioIntegrationTests : IClassFixture<IntegrationTestWebAppFact
 
         response.EnsureSuccessStatusCode();
 
-        var json = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
 
         json.GetProperty("convertedAmount").GetDecimal().Should().Be(400.00m);
 

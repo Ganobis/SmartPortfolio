@@ -17,13 +17,11 @@ public class Portfolio
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public Guid OwnerId { get; private set; }
+    public User Owner { get; private set; } = null!;
     public Money Balance { get; private set; } = null!;
     public IReadOnlyCollection<Transaction> Transactions => _transactions.AsReadOnly();
 
-    public Portfolio()
-    {
-
-    }
+    private Portfolio() {}
 
     public Portfolio(string name, Guid ownerId, string currency)
     {
