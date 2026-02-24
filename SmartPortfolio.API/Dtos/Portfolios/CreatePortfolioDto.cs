@@ -1,4 +1,4 @@
-﻿namespace SmartPortfolio.API.Dtos;
+﻿namespace SmartPortfolio.API.Dtos.Portfolios;
 
 public record CreatePortfolioDto(
     string Name,

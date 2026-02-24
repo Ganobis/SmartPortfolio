@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SmartPortfolio.API.Dtos;
+using SmartPortfolio.API.Dtos.Portfolios;
+using SmartPortfolio.API.Dtos.Transactions;
+using SmartPortfolio.API.Extensions;
 using SmartPortfolio.Domain.Entities;
 using SmartPortfolio.Domain.Interfaces;
 using SmartPortfolio.Domain.ValueObjects;
@@ -66,6 +68,25 @@ public class PortfoliosController : ControllerBase
         ));
     }
 
+    [HttpGet("{id}/transactions")]
+    public async Task<IActionResult> GetTransactions(Guid id)
+    {
+        var portfolio = await GetUserPortfolioAsync(id);
+        if (portfolio is null) return NotFound("Portfolio not found or you don't have access to it.");
+
+        var transactionsDto = portfolio.Transactions
+            .OrderByDescending(t => t.Timestamp)
+            .Select(t => new TransactionDto(
+                t.Id,
+                t.Amount,
+                t.Currency,
+                t.Timestamp))
+            .ToList();
+
+        return Ok(transactionsDto);
+
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create(CreatePortfolioDto dto)
     {
@@ -125,21 +146,9 @@ public class PortfoliosController : ControllerBase
 
     private async Task<Portfolio?> GetUserPortfolioAsync(Guid poetfolioId)
     {
-        var currentUserId = GetUserId();
+        var currentUserId = User.GetUserId();
         return await _dbContext.Portfolios
             .Include(p => p.Transactions)
             .FirstOrDefaultAsync(p => p.Id == poetfolioId && p.OwnerId == currentUserId);
-    }
-
-    private Guid GetUserId()
-    {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-                           User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
-        if (Guid.TryParse(userIdString, out var userId))
-        {
-            return userId;
-        }
-        throw new UnauthorizedAccessException("Nie można zidentyfikować użytkownika.");
     }
 }

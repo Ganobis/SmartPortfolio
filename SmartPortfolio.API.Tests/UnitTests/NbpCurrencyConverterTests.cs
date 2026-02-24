@@ -3,7 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Moq.Protected;
-using SmartPortfolio.Infrastructure.Services;
+using SmartPortfolio.Infrastructure.Services.CurrencyConverter;
 using System.Net;
 using System.Text.Json;
 
@@ -13,20 +13,19 @@ public class NbpCurrencyConverterTests
     private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _memoryCache;
-    private readonly Mock<IConfiguration> _configurationMock;
     private readonly NbpCurrencyConverter _converter;
 
     public NbpCurrencyConverterTests()
     {
         _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-        _httpClient = new HttpClient(_httpMessageHandlerMock.Object);
+        _httpClient = new HttpClient(_httpMessageHandlerMock.Object)
+        {
+            BaseAddress = new Uri("http://fake-nbp-api.com/")
+        };
 
         _memoryCache = new MemoryCache(new MemoryCacheOptions());
 
-        _configurationMock = new Mock<IConfiguration>();
-        _configurationMock.Setup(c => c["NbpSettings:ApiUrl"]).Returns("http://fake-nbp-api.com");
-
-        _converter = new NbpCurrencyConverter(_httpClient, _memoryCache, _configurationMock.Object);
+        _converter = new NbpCurrencyConverter(_httpClient, _memoryCache);
     }
 
     [Fact]

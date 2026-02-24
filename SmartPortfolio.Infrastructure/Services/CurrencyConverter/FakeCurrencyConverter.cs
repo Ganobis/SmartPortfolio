@@ -1,6 +1,6 @@
 ﻿using SmartPortfolio.Domain.Interfaces;
 
-namespace SmartPortfolio.Infrastructure.Services;
+namespace SmartPortfolio.Infrastructure.Services.CurrencyConverter;
 
 public class FakeCurrencyConverter : ICurrencyConverter
 {

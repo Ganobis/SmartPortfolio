@@ -1,25 +1,21 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 using SmartPortfolio.Domain.Interfaces;
 using System.Net.Http.Json;
-using static SmartPortfolio.Infrastructure.Services.NbpResponse;
+using static SmartPortfolio.Infrastructure.Services.CurrencyConverter.NbpResponse;
 
-namespace SmartPortfolio.Infrastructure.Services;
+namespace SmartPortfolio.Infrastructure.Services.CurrencyConverter;
 
 public class NbpCurrencyConverter : ICurrencyConverter
 {
     private readonly HttpClient _httpClient;
     private readonly IMemoryCache _cache;
-    private readonly string _nbpApiUrl;
 
     private const string CacheKey = "NbpRatesTableA";
 
-    public NbpCurrencyConverter(HttpClient httpClient, IMemoryCache memoryCache, IConfiguration configuration)
+    public NbpCurrencyConverter(HttpClient httpClient, IMemoryCache memoryCache)
     {  
         _httpClient = httpClient;
         _cache = memoryCache;
-        _nbpApiUrl = configuration["NbpSettings:ApiUrl"]
-                         ?? throw new ArgumentNullException("Define NBP address in appsettings.json!");
     }
 
     public async Task<decimal> Convert(decimal amount, string fromCurrency, string toCurrency)
@@ -50,7 +46,7 @@ public class NbpCurrencyConverter : ICurrencyConverter
     {
         if (!_cache.TryGetValue(CacheKey, out NbpTable? table))
         {
-            var response = await _httpClient.GetFromJsonAsync<List<NbpTable>>(_nbpApiUrl);
+            var response = await _httpClient.GetFromJsonAsync<List<NbpTable>>("");
 
             if (response == null || response.Count == 0)
             {

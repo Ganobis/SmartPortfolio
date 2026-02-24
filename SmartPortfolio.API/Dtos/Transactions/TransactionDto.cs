@@ -1,4 +1,4 @@
-﻿namespace SmartPortfolio.API.Dtos;
+﻿namespace SmartPortfolio.API.Dtos.Transactions;
 
 public record TransactionDto(
     Guid Id,

@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using SmartPortfolio.API.Dtos;
+using SmartPortfolio.API.Dtos.Portfolios;
+using SmartPortfolio.API.Dtos.Transactions;
 using SmartPortfolio.API.Tests.IntegrationTests.Helpers;
 using System.Net;
 using System.Net.Http.Json;
@@ -101,5 +102,28 @@ public class PortfolioIntegrationTests : IClassFixture<IntegrationTestWebAppFact
         var response = await _client.GetAsync($"/api/portfolios/{randomId}/value?currency=PLN");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Should_Return_Transaction_History_For_Portfolio()
+    {
+        var createResponse = await _client.PostAsJsonAsync("/api/portfolios", new CreatePortfolioDto("Savings", "USD"));
+        createResponse.EnsureSuccessStatusCode();
+        var portfolio = await createResponse.Content.ReadFromJsonAsync<PortfolioDto>();
+        var portfolioId = portfolio!.Id;
+
+        await _client.PostAsJsonAsync($"/api/portfolios/{portfolioId}/deposit", new CreateTransactionDto(100, "USD"));
+        await _client.PostAsJsonAsync($"/api/portfolios/{portfolioId}/deposit", new CreateTransactionDto(50, "USD"));
+
+        var historyResponse = await _client.GetAsync($"/api/portfolios/{portfolioId}/transactions");
+
+        historyResponse.EnsureSuccessStatusCode();
+        var transactions = await historyResponse.Content.ReadFromJsonAsync<List<TransactionDto>>();
+
+        transactions.Should().NotBeNull();
+        transactions!.Count.Should().Be(2); 
+        
+        transactions[0].Amount.Should().Be(50);
+        transactions[1].Amount.Should().Be(100);
     }
 }

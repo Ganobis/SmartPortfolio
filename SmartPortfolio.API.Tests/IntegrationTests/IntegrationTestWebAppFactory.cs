@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using SmartPortfolio.Domain.Interfaces;
 using SmartPortfolio.Infrastructure.Persistence;
-using SmartPortfolio.Infrastructure.Services;
+using SmartPortfolio.Infrastructure.Services.CurrencyConverter;
 using Testcontainers.MsSql;
 
 namespace SmartPortfolio.API.Tests.IntegrationTests;

@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using SmartPortfolio.API.Dtos;
+using SmartPortfolio.API.Dtos.Users;
 using SmartPortfolio.Domain.Entities;
 using SmartPortfolio.Infrastructure.Persistence;
 using System.IdentityModel.Tokens.Jwt;

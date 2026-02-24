@@ -1,4 +1,4 @@
-﻿namespace SmartPortfolio.Infrastructure.Services;
+﻿namespace SmartPortfolio.Infrastructure.Services.CurrencyConverter;
 
 public class NbpResponse
 {

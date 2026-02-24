@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using SmartPortfolio.API.Dtos;
+using SmartPortfolio.API.Dtos.Transactions;
 using SmartPortfolio.Domain.ValueObjects;
 
 namespace SmartPortfolio.API.Validators;

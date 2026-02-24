@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using SmartPortfolio.API.Dtos;
+using SmartPortfolio.API.Dtos.Users;
 
 namespace SmartPortfolio.API.Validators;
 

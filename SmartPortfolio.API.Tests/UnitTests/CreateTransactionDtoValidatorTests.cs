@@ -1,5 +1,5 @@
 ﻿using FluentValidation.TestHelper;
-using SmartPortfolio.API.Dtos;
+using SmartPortfolio.API.Dtos.Transactions;
 using SmartPortfolio.API.Validators;
 using System;
 using System.Collections.Generic;

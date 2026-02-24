@@ -7,7 +7,8 @@ using SmartPortfolio.API.Extensions;
 using SmartPortfolio.API.Infrastructure;
 using SmartPortfolio.Domain.Entities;
 using SmartPortfolio.Domain.Interfaces;
-using SmartPortfolio.Infrastructure.Services;
+using SmartPortfolio.Infrastructure.Services.CurrencyConverter;
+using SmartPortfolio.Infrastructure.Services.StockPrice;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +30,22 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
-builder.Services.AddScoped<ICurrencyConverter, NbpCurrencyConverter>();
+var nbpUrl = builder.Configuration["NbpSettings:ApiUrl"]; 
+builder.Services.AddHttpClient<ICurrencyConverter, NbpCurrencyConverter>(client =>
+{
+    if (!string.IsNullOrEmpty(nbpUrl))
+    {
+        client.BaseAddress = new Uri(nbpUrl);
+    }
+});
+var finnhubBaseUrl = builder.Configuration["FinnhubSettings:ApiUrl"];
+builder.Services.AddHttpClient<IStockPricingService, FinnhubStockPricingService>(client =>
+{
+    if (!string.IsNullOrEmpty(finnhubBaseUrl))
+    {
+        client.BaseAddress = new Uri(finnhubBaseUrl);
+    }
+});
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 // WEB Infrastructure
