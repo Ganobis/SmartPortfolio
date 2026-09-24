@@ -18,6 +18,8 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         var (statusCode, title) = exception switch
         {
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Brak autoryzacji"),
+            KeyNotFoundException => (StatusCodes.Status404NotFound, "Zasób nie został znaleziony"),
             ArgumentException => (StatusCodes.Status400BadRequest, "Błąd walidacji danych"),
             InvalidOperationException => (StatusCodes.Status400BadRequest, "Operacja niedozwolona"),
             _ => (StatusCodes.Status500InternalServerError, "Błąd serwera")
@@ -36,6 +38,6 @@ public class GlobalExceptionHandler : IExceptionHandler
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
         return true;
     }
-        
+
 }
 

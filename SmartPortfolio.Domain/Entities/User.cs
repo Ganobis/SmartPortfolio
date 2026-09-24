@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SmartPortfolio.Domain.Entities;
+﻿namespace SmartPortfolio.Domain.Entities;
 
 public class User
 {
@@ -20,6 +14,6 @@ public class User
         Email = email;
         PasswordHash = passwordHash;
     }
-    
+
     private User() { }
 }

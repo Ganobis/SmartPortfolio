@@ -13,7 +13,7 @@ public class NbpCurrencyConverter : ICurrencyConverter
     private const string CacheKey = "NbpRatesTableA";
 
     public NbpCurrencyConverter(HttpClient httpClient, IMemoryCache memoryCache)
-    {  
+    {
         _httpClient = httpClient;
         _cache = memoryCache;
     }
@@ -22,7 +22,7 @@ public class NbpCurrencyConverter : ICurrencyConverter
     {
         var table = await GetRatesFromNbp();
 
-        var rates = table.Rates.ToDictionary(k =>  k.Code, v => v.Mid);
+        var rates = table.Rates.ToDictionary(k => k.Code, v => v.Mid);
         if (!rates.ContainsKey("PLN"))
         {
             rates.Add("PLN", 1.0m);

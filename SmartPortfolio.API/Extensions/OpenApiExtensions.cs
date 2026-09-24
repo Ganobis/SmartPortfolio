@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
 
 namespace SmartPortfolio.API.Extensions;
 

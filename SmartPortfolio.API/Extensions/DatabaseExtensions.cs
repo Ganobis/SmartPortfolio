@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SmartPortfolio.Application.Common.Interfaces;
 using SmartPortfolio.Infrastructure.Persistence;
 
 namespace SmartPortfolio.API.Extensions;
@@ -17,7 +18,7 @@ public static class DatabaseExtensions
                     maxRetryDelay: TimeSpan.FromSeconds(10),
                     errorNumbersToAdd: null);
             }));
-
+        services.AddScoped<ISmartPortfolioDbContext>(sp => sp.GetRequiredService<SmartPortfolioDbContext>());
         return services;
     }
 

@@ -1,16 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SmartPortfolio.API.Dtos.Portfolios;
 using SmartPortfolio.API.Dtos.Transactions;
 using SmartPortfolio.API.Extensions;
-using SmartPortfolio.Domain.Entities;
-using SmartPortfolio.Domain.Interfaces;
-using SmartPortfolio.Domain.ValueObjects;
-using SmartPortfolio.Infrastructure.Persistence;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+using SmartPortfolio.Application.Portfolios.Commands.CreatePortfolio;
+using SmartPortfolio.Application.Portfolios.Commands.DepositFunds;
+using SmartPortfolio.Application.Portfolios.Commands.WithdrawFunds;
+using SmartPortfolio.Application.Portfolios.Queries.GetPortfolioById;
+using SmartPortfolio.Application.Portfolios.Queries.GetPortfolioTransactions;
+using SmartPortfolio.Application.Portfolios.Queries.GetPortfolioValue;
 
 namespace SmartPortfolio.API.Controllers;
 
@@ -19,136 +18,59 @@ namespace SmartPortfolio.API.Controllers;
 [Authorize]
 public class PortfoliosController : ControllerBase
 {
-    private readonly SmartPortfolioDbContext _dbContext;
-    private readonly ICurrencyConverter _currencyConverter;
+    private readonly ISender _sender;
 
-    public PortfoliosController(SmartPortfolioDbContext dbContext, ICurrencyConverter currencyConverter)
+    public PortfoliosController(ISender sender)
     {
-        _dbContext = dbContext;
-        _currencyConverter = currencyConverter;
+        _sender = sender;
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<PortfolioDto>> Get(Guid id)
     {
-        var portfolio = await GetUserPortfolioAsync(id);
-        if (portfolio is null) return NotFound();
-
-        var transactionsDto = portfolio.Transactions
-            .Select(t => new TransactionDto(t.Id, t.Amount, t.Currency, t.Timestamp))
-            .ToList();
-
-        var dto = new PortfolioDto
-        (
-            portfolio.Id,
-            portfolio.Name,
-            portfolio.Balance.Amount,
-            portfolio.Balance.Currency,
-            transactionsDto
-        );
-
-        return Ok(dto);
+        var query = new GetPortfolioByIdQuery(id, User.GetUserId());
+        var result = await _sender.Send(query);
+        return Ok(result);
     }
 
-
     [HttpGet("{id}/value")]
-    public async Task<ActionResult<PortfolioDto>> GetValue(Guid id, [FromQuery] string currency = "PLN")
+    public async Task<ActionResult<PortfolioValueDto>> GetValue(Guid id, [FromQuery] string currency = "PLN")
     {
-        var portfolio = await GetUserPortfolioAsync(id);
-        if (portfolio is null) return NotFound();
-
-        decimal convertedAmount = await _currencyConverter.Convert(portfolio.Balance.Amount, portfolio.Balance.Currency, currency);
-
-        return Ok(new PortfolioValueDto(
-            portfolio.Id,
-            portfolio.Balance.Amount,
-            portfolio.Balance.Currency,
-            convertedAmount,
-            currency.ToUpper()
-        ));
+        var query = new GetPortfolioValueQuery(id, User.GetUserId(), currency);
+        var result = await _sender.Send(query);
+        return Ok(result);
     }
 
     [HttpGet("{id}/transactions")]
     public async Task<IActionResult> GetTransactions(Guid id)
     {
-        var portfolio = await GetUserPortfolioAsync(id);
-        if (portfolio is null) return NotFound("Portfolio not found or you don't have access to it.");
-
-        var transactionsDto = portfolio.Transactions
-            .OrderByDescending(t => t.Timestamp)
-            .Select(t => new TransactionDto(
-                t.Id,
-                t.Amount,
-                t.Currency,
-                t.Timestamp))
-            .ToList();
-
-        return Ok(transactionsDto);
-
+        var query = new GetPortfolioTransactionsQuery(id, User.GetUserId());
+        var result = await _sender.Send(query);
+        return Ok(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreatePortfolioDto dto)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-                           User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-        if (!Guid.TryParse(userIdString, out var ownerId))
-        {
-            return Unauthorized("The user could not be identified");
-        }
+        var command = new CreatePortfolioCommand(User.GetUserId(), dto.Name, dto.Currency);
+        var responseDto = await _sender.Send(command);
 
-        var portfolio = new Portfolio(dto.Name, ownerId, dto.Currency);
-
-
-        _dbContext.Portfolios.Add(portfolio);
-
-        await _dbContext.SaveChangesAsync();
-
-        var responseDto = new PortfolioDto
-        (
-            portfolio.Id,
-            portfolio.Name,
-            portfolio.Balance.Amount,
-            portfolio.Balance.Currency,
-            new List<TransactionDto>()
-        );
-
-
-        return CreatedAtAction(nameof(Get), new { id = portfolio.Id }, responseDto);
+        return CreatedAtAction(nameof(Get), new { id = responseDto.Id }, responseDto);
     }
 
     [HttpPost("{id}/deposit")]
     public async Task<IActionResult> Deposit(Guid id, CreateTransactionDto dto)
     {
-        var portfolio = await GetUserPortfolioAsync(id);
-        if (portfolio is null) return NotFound();
-
-        var money = new Money(dto.Amount, dto.Currency);
-        portfolio.Deposit(money);
-
-        await _dbContext.SaveChangesAsync();
+        var command = new DepositFundsCommand(id, User.GetUserId(), dto.Amount, dto.Currency);
+        await _sender.Send(command);
         return NoContent();
-
     }
 
     [HttpPost("{id}/withdraw")]
     public async Task<IActionResult> Withdraw(Guid id, CreateTransactionDto dto)
     {
-        var portfolio = await GetUserPortfolioAsync(id);
-        if (portfolio is null) return NotFound();
-
-        var money = new Money(dto.Amount, dto.Currency);
-        portfolio.Withdraw(money);
-
-        await _dbContext.SaveChangesAsync();
+        var command = new WithdrawFundsCommand(id, User.GetUserId(), dto.Amount, dto.Currency);
+        await _sender.Send(command);
         return NoContent();
-    }
-
-    private async Task<Portfolio?> GetUserPortfolioAsync(Guid poetfolioId)
-    {
-        var currentUserId = User.GetUserId();
-        return await _dbContext.Portfolios
-            .Include(p => p.Transactions)
-            .FirstOrDefaultAsync(p => p.Id == poetfolioId && p.OwnerId == currentUserId);
     }
 }

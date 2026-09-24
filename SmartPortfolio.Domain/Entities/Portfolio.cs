@@ -1,16 +1,11 @@
 ﻿using SmartPortfolio.Domain.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SmartPortfolio.Domain.Entities;
 
 public class Portfolio
 {
     #region privarte fields
-        
+
     private readonly List<Transaction> _transactions = new();
 
     #endregion
@@ -24,7 +19,7 @@ public class Portfolio
     private readonly List<Asset> _assets = new();
     public IReadOnlyCollection<Asset> Assets => _assets.AsReadOnly();
 
-    private Portfolio() {}
+    private Portfolio() { }
 
     public Portfolio(string name, Guid ownerId, string currency)
     {
@@ -73,7 +68,7 @@ public class Portfolio
         }
         Withdraw(new Money(totalCost, Balance.Currency));
         var existingAsset = _assets.FirstOrDefault(a => a.Ticker == ticker.ToUpper());
-        if (existingAsset != null) 
+        if (existingAsset != null)
         {
             existingAsset.AddLot(quantity, pricePerShare, transactionDate);
         }

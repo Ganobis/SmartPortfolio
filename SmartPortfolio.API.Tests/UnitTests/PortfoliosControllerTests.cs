@@ -1,79 +1,44 @@
 ﻿using FluentAssertions;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Moq;
-using Org.BouncyCastle.Ocsp;
 using SmartPortfolio.API.Controllers;
+using SmartPortfolio.API.Dtos.Portfolios;
 using SmartPortfolio.API.Tests.UnitTests.Helpers;
-using SmartPortfolio.Domain.Entities;
-using SmartPortfolio.Domain.Interfaces;
-using SmartPortfolio.Domain.ValueObjects;
-using SmartPortfolio.Infrastructure.Persistence;
-using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Text;
+using SmartPortfolio.Application.Portfolios.Queries.GetPortfolioValue;
+using Xunit;
 
 namespace SmartPortfolio.API.Tests.UnitTests;
+
 public class PortfoliosControllerTests
 {
-    private readonly SmartPortfolioDbContext _context;
-    private readonly Mock<ICurrencyConverter> _converterMock;
+    private readonly Mock<ISender> _senderMock;
     private readonly PortfoliosController _controller;
+    private readonly Guid _userId = Guid.NewGuid();
 
     public PortfoliosControllerTests()
     {
-        var options = new DbContextOptionsBuilder<SmartPortfolioDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        _context = new SmartPortfolioDbContext(options);
-
-        _converterMock = new Mock<ICurrencyConverter>();
-
-        _controller = new PortfoliosController(_context, _converterMock.Object);
+        _senderMock = new Mock<ISender>();
+        _controller = new PortfoliosController(_senderMock.Object);
+        _controller.MockCurrentUser(_userId);
     }
-
-
 
     [Fact]
     public async Task GetValue_Should_Return_Ok_With_Converted_Amount()
     {
+        var portfolioId = Guid.NewGuid();
+        var expectedDto = new PortfolioValueDto(portfolioId, 100, "USD", 90.00m, "EUR");
 
-        var ownerId = Guid.NewGuid();
-        var money = new Money(100, "USD");
-        var portfolio = new Portfolio("Test", ownerId, "USD");
+        _senderMock
+            .Setup(s => s.Send(It.Is<GetPortfolioValueQuery>(q => q.PortfolioId == portfolioId && q.UserId == _userId && q.TargetCurrency == "EUR"), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(expectedDto);
 
-
-        typeof(Portfolio).GetProperty("Balance")!.SetValue(portfolio, money);
-
-        _context.Portfolios.Add(portfolio);
-        await _context.SaveChangesAsync();
-
-
-        _converterMock.Setup(x => x.Convert(100, "USD", "EUR"))
-                      .ReturnsAsync(90.00m);
-
-
-        _controller.MockCurrentUser(ownerId);
-
-        var realportfolioId = portfolio.Id;
-        var result = await _controller.GetValue(realportfolioId, "EUR");
+        var result = await _controller.GetValue(portfolioId, "EUR");
 
         var okResult = result.Result.Should().BeOfType<OkObjectResult>().Subject;
+        var value = okResult.Value.Should().BeOfType<PortfolioValueDto>().Subject;
 
-        dynamic value = okResult.Value!;
-
-        ((decimal)value.ConvertedAmount).Should().Be(90.00m);
-        ((string)value.TargetCurrency).Should().Be("EUR");
-    }
-
-    [Fact]
-    public async Task GetValue_Should_Return_NotFound_When_Portfolio_Missing()
-    {
-        _controller.MockCurrentUser(new Guid());
-        var result = await _controller.GetValue(Guid.NewGuid(), "PLN");
-        result.Result.Should().BeOfType<NotFoundResult>();
+        value.ConvertedAmount.Should().Be(90.00m);
+        value.TargetCurrency.Should().Be("EUR");
     }
 }
-

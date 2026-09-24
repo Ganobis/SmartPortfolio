@@ -1,11 +1,6 @@
 ﻿using FluentValidation.TestHelper;
 using SmartPortfolio.API.Dtos.Transactions;
 using SmartPortfolio.API.Validators;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 namespace SmartPortfolio.API.Tests.UnitTests;
 
 public class CreateTransactionDtoValidatorTests

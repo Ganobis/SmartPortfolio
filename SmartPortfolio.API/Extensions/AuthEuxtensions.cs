@@ -1,6 +1,8 @@
-﻿using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using SmartPortfolio.Application.Common.Interfaces;
+using SmartPortfolio.Infrastructure.Authentication;
+using System.Text;
 
 namespace SmartPortfolio.API.Extensions;
 
@@ -28,6 +30,7 @@ public static class AuthExtensions
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!))
             };
         });
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
         return services;
     }

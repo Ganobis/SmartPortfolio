@@ -1,12 +1,10 @@
 ﻿using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SmartPortfolio.API.Dtos.Portfolios;
 using SmartPortfolio.API.Dtos.Transactions;
 using SmartPortfolio.API.Tests.IntegrationTests.Helpers;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Xunit;
 
 namespace SmartPortfolio.API.Tests.IntegrationTests;
 
@@ -121,8 +119,8 @@ public class PortfolioIntegrationTests : IClassFixture<IntegrationTestWebAppFact
         var transactions = await historyResponse.Content.ReadFromJsonAsync<List<TransactionDto>>();
 
         transactions.Should().NotBeNull();
-        transactions!.Count.Should().Be(2); 
-        
+        transactions!.Count.Should().Be(2);
+
         transactions[0].Amount.Should().Be(50);
         transactions[1].Amount.Should().Be(100);
     }

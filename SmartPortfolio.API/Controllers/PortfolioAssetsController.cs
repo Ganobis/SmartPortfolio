@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SmartPortfolio.API.Dtos.Assets;
 using SmartPortfolio.API.Extensions;
-using SmartPortfolio.Domain.Entities;
-using SmartPortfolio.Domain.Interfaces;
-using SmartPortfolio.Infrastructure.Persistence;
-using System.Security.Claims;
+using SmartPortfolio.Application.Portfolios.Commands.BuyAsset;
+using SmartPortfolio.Application.Portfolios.Commands.SellAsset;
+using SmartPortfolio.Application.Portfolios.Queries.GetPortfolioAssets;
 
 namespace SmartPortfolio.API.Controllers;
 
@@ -15,79 +14,49 @@ namespace SmartPortfolio.API.Controllers;
 [Authorize]
 public class PortfolioAssetsController : ControllerBase
 {
-    private readonly SmartPortfolioDbContext _dbContext;
-    private readonly IStockPricingService _stockPricingService;
+    private readonly ISender _sender;
 
-    public PortfolioAssetsController(SmartPortfolioDbContext dbContext, IStockPricingService stockPricingService)
+    public PortfolioAssetsController(ISender sender)
     {
-        _dbContext = dbContext;
-        _stockPricingService = stockPricingService;
+        _sender = sender;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll(Guid portfolioId)
     {
-        var portfolio = await GetUserPortfolioAsync(portfolioId); 
-        if (portfolio is null) return NotFound("Portfolio not found or you don't have access to it.");
-
-        var assetsDto = portfolio.Assets
-            .Select(a => new AssetDto(a.Id, a.Ticker, a.TotalQuantity))
-            .ToList();
-
-        return Ok(assetsDto);
+        var query = new GetPortfolioAssetsQuery(portfolioId, User.GetUserId());
+        var result = await _sender.Send(query);
+        return Ok(result);
     }
 
     [HttpPost("buy")]
     public async Task<IActionResult> Buy(Guid portfolioId, BuyAssetDto dto)
     {
-        var portfolio = await GetUserPortfolioAsync(portfolioId);
-        if (portfolio is null) return NotFound("Portfolio not found or you don't have access to it."); 
-        
-        var priceToUse = dto.PricePerShare ?? await _stockPricingService.GetCurrentPriceAsync(dto.Ticker);
+        var command = new BuyAssetCommand(
+            portfolioId,
+            User.GetUserId(),
+            dto.Ticker,
+            dto.Quantity,
+            dto.PricePerShare,
+            dto.PurchaseDate
+        );
 
-        try
-        {
-            portfolio.BuyAsset(dto.Ticker, dto.Quantity, priceToUse, dto.PurchaseDate);
-
-            await _dbContext.SaveChangesAsync();
-            return NoContent();
-        }
-        catch (InvalidOperationException ex) 
-        {
-            return BadRequest(ex.Message);
-        }
+        await _sender.Send(command);
+        return NoContent();
     }
 
     [HttpPost("sell")]
     public async Task<IActionResult> Sell(Guid portfolioId, SellAssetDto dto)
     {
-        var portfolio = await GetUserPortfolioAsync(portfolioId);
-        if (portfolio is null) return NotFound("Portfolio not found or you don't have access to it.");
+        var command = new SellAssetCommand(
+            portfolioId,
+            User.GetUserId(),
+            dto.Ticker,
+            dto.Quantity,
+            dto.SellPricePerShare
+        );
 
-        var priceToUse = dto.SellPricePerShare ?? await _stockPricingService.GetCurrentPriceAsync(dto.Ticker);
-
-        try
-        {
-            portfolio.SellAsset(dto.Ticker, dto.Quantity, priceToUse);
-
-            await _dbContext.SaveChangesAsync();
-            return NoContent();
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
-
-    private async Task<Portfolio?> GetUserPortfolioAsync(Guid portfolioId)
-    {
-        var userIdString = User.GetUserId();
-        return await _dbContext.Portfolios
-                               .Include(p => p.Assets)
-                                    .ThenInclude(a => a.AssetLots)
-                               .Include(p => p.Transactions)
-                               .AsSplitQuery()
-                               .FirstOrDefaultAsync(p => p.Id == portfolioId && 
-                                                         p.OwnerId == userIdString);
+        await _sender.Send(command);
+        return NoContent();
     }
 }

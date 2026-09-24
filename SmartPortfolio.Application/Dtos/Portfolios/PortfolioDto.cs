@@ -4,9 +4,9 @@ using SmartPortfolio.API.Dtos.Transactions;
 using System.Collections.Generic;
 
 public record PortfolioDto(
-    Guid Id, 
+    Guid Id,
     string Name,
-    decimal BalanceAmount, 
+    decimal BalanceAmount,
     string Currency,
     IEnumerable<TransactionDto> Transactions
     );

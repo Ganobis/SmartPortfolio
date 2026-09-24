@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using SmartPortfolio.Domain.Entities;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace SmartPortfolio.API.Extensions;

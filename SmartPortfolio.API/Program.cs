@@ -30,7 +30,7 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
-var nbpUrl = builder.Configuration["NbpSettings:ApiUrl"]; 
+var nbpUrl = builder.Configuration["NbpSettings:ApiUrl"];
 builder.Services.AddHttpClient<ICurrencyConverter, NbpCurrencyConverter>(client =>
 {
     if (!string.IsNullOrEmpty(nbpUrl))
@@ -46,6 +46,8 @@ builder.Services.AddHttpClient<IStockPricingService, FinnhubStockPricingService>
         client.BaseAddress = new Uri(finnhubBaseUrl);
     }
 });
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(SmartPortfolio.Application.Portfolios.Commands.BuyAsset.BuyAssetCommand).Assembly));
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 // WEB Infrastructure

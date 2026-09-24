@@ -8,7 +8,7 @@ public class Asset
     public string Ticker { get; private set; } = string.Empty;
 
     private readonly List<AssetLot> _assetLots = new();
-    public IReadOnlyCollection<AssetLot> AssetLots => _assetLots.AsReadOnly(); 
+    public IReadOnlyCollection<AssetLot> AssetLots => _assetLots.AsReadOnly();
     public decimal TotalQuantity => _assetLots.Sum(l => l.Quantity);
 
     private Asset() { }

@@ -1,6 +1,5 @@
 ﻿using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 using Moq;
 using Moq.Protected;
 using SmartPortfolio.Infrastructure.Services.CurrencyConverter;

@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SmartPortfolio.Application.Common.Interfaces;
 using SmartPortfolio.Domain.Entities;
 
 namespace SmartPortfolio.Infrastructure.Persistence
 {
-    public class SmartPortfolioDbContext : DbContext
+    public class SmartPortfolioDbContext : DbContext, ISmartPortfolioDbContext
     {
         public SmartPortfolioDbContext(DbContextOptions<SmartPortfolioDbContext> options) : base(options)
         {
@@ -87,7 +83,8 @@ namespace SmartPortfolio.Infrastructure.Persistence
                 lotsNavigation?.SetPropertyAccessMode(PropertyAccessMode.Field);
             });
 
-            modelBuilder.Entity<AssetLot>(entity => { 
+            modelBuilder.Entity<AssetLot>(entity =>
+            {
                 entity.HasKey(a => a.Id);
                 entity.Property(a => a.Id).ValueGeneratedNever();
                 entity.Property(al => al.Quantity).HasPrecision(18, 8).IsRequired();

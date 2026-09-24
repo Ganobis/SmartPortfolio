@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SmartPortfolio.Domain.Entities;
+﻿namespace SmartPortfolio.Domain.Entities;
 
 public class AssetLot
 {
@@ -23,9 +17,9 @@ public class AssetLot
         {
             throw new ArgumentException("Quantity must be greater than zero.");
         }
-        if (pricePerShare < 0) 
-        { 
-            throw new ArgumentException("Price cannot be negative."); 
+        if (pricePerShare < 0)
+        {
+            throw new ArgumentException("Price cannot be negative.");
         }
 
         Id = Guid.NewGuid();
